@@ -27,13 +27,22 @@ class Problem:
         self.x_1, self.x_2, self.x_matrix, self.y = eval_on_grid(fun, bounds, n_steps)
         self.safe_threshold = np.quantile(self.y, percentile)
         print(f'Safe Threshold ({self.percentile}) = {self.safe_threshold}')
-        self.lipschitz = estimate_lipschitz(fun, bounds, n_steps)
-        print(f'Lipschitz constant = {self.lipschitz}')
+        self._lipschitz = None # Lazy computation
         self.opt_x = None
         self.opt_y = None
         self.default_safe_seeds = default_safe_seeds
         self._init_counters()
-        
+
+    @property
+    def lipschitz(self):
+        # Lazy computation
+        if self._lipschitz is None:
+            g1, g2 = np.gradient(self.y.reshape(len(self.x_1), len(self.x_2)),
+                                 self.x_1, self.x_2)
+            self._lipschitz = max(np.abs(g1).max(), np.abs(g2).max())
+            print(f'Lipschitz constant = {self.lipschitz}')
+        return self._lipschitz
+    
     def _init_counters(self):
         self.n_evaluations = 0
         self.n_unsafe = 0
