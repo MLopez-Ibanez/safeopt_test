@@ -1,13 +1,11 @@
 import numpy as np
 
 def eval_on_grid(fun, xbound, n_steps):
-    # This is similar but simpler than what safeopt.linearly_spaced_combinations does.
     x_1 = np.linspace(xbound[0][0], xbound[0][1], n_steps)
     x_2 = np.linspace(xbound[1][0], xbound[1][1], n_steps)
     X,Y = np.meshgrid(x_1, x_2)
+    # This is what safeopt.linearly_spaced_combinations() returns.
     x_matrix = np.column_stack((X.ravel(),Y.ravel()))
-    # safeopt.linearly_spaced_combinations returns x_matrix[:, ::-1]
-    # Another option would be np.apply_along_axis(function, 1, array)
     y = np.apply_along_axis(fun, 1, x_matrix)
     return x_1, x_2, x_matrix, y
 
@@ -17,14 +15,15 @@ def estimate_lipschitz(f, xbound, n_steps):
     return max(np.abs(g1).max(), np.abs(g2).max())
 
 class Problem:
-    def __init__(self, fun, bounds, percentile, default_safe_seeds):
+    def __init__(self, name, fun, bounds, percentile, default_safe_seeds):
+        self._name = name
         self.fun = fun
         self.bounds = bounds
         self.xdim = len(bounds)
         assert percentile >= 0 and percentile < 0.9
         self.percentile = percentile
         n_steps = 500
-        self.x_1, self.x_2, self.x_matrix, self.y = eval_on_grid(fun, bounds, n_steps)
+        self.x_1, self.x_2, self.x_matrix, self.y = eval_on_grid(self.fun, bounds, n_steps)
         self.safe_threshold = np.quantile(self.y, percentile)
         print(f'Safe Threshold ({self.percentile}) = {self.safe_threshold}')
         self._lipschitz = None # Lazy computation
@@ -33,6 +32,9 @@ class Problem:
         self.default_safe_seeds = default_safe_seeds
         self._init_counters()
 
+    @property
+    def name(self): return self._name
+    
     @property
     def lipschitz(self):
         # Lazy computation
@@ -46,7 +48,8 @@ class Problem:
     def _init_counters(self):
         self.n_evaluations = 0
         self.n_unsafe = 0
-    
+        self.Y = []
+
     def is_safe(self, y):
         return y >= self.safe_threshold
         
@@ -90,5 +93,6 @@ class Problem:
     def __call__(self, x):
         self.n_evaluations += 1
         y = self.fun(x)
+        self.Y.append(y)
         self.n_unsafe += int(~self.is_safe(y))
         return y
