@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+
 from SafeProblem import Problem
 from SafeOptWrapper import run_safeopt,run_modified_safeopt
 
@@ -39,7 +40,7 @@ for algo in algos:
     for n_seeds in N_seeds:
         df_reps = []
         for r in range(n_reps):
-            np.random.seed(r)
+            np.random.seed(r + 1)
             algos[algo](fun, n_seeds = n_seeds, n_evals = n_evals)
             df_y = pd.DataFrame(dict(t = np.arange(1, n_evals + 1), y = fun.Y))
             df_y['rep'] = r + 1
