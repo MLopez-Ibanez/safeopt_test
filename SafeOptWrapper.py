@@ -2,7 +2,7 @@ from safeopt import SafeOpt
 import GPy
 
 def run_modified_safeopt(fun, n_seeds, n_evals):
-    run_safeopt(fun, n_seeds, n_evals, modified = True)
+    return run_safeopt(fun, n_seeds, n_evals, modified = True)
     
 def run_safeopt(fun, n_seeds, n_evals, modified = False):
     fun._init_counters()
@@ -29,5 +29,6 @@ def run_safeopt(fun, n_seeds, n_evals, modified = False):
         # Add this to the GP model
         opt.add_new_data_point(x_next, y_meas)
         print(f'evals={opt.t}\tx_next={x_next}\ty={y_meas}\tsafe={y_meas >= opt.fmin}')
-    
+    return opt
+
 

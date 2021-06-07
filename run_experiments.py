@@ -30,11 +30,11 @@ safe_sphere = Problem(name = "sphere_2D_75",
 #safe_rosenbrok = Problem(fun = rosenbrock, bounds = [(-3., 3.),(-3.,3.)], percentile = 0.5)
 fun = safe_sphere
 n_evals = 100
-n_reps = 10
+n_reps = 5
 N_seeds = [1,5,10]
 
 algos = dict(SafeOpt = run_safeopt, SafeOptMod = run_modified_safeopt)
-algo = "SafeOpt"
+
 for algo in algos:
     for n_seeds in N_seeds:
         df_reps = []
@@ -43,6 +43,10 @@ for algo in algos:
             algos[algo](fun, n_seeds = n_seeds, n_evals = n_evals)
             df_y = pd.DataFrame(dict(t = np.arange(1, n_evals + 1), y = fun.Y))
             df_y['rep'] = r + 1
-        df_reps.append(df_y)
+            df_reps.append(df_y)
+
         df_reps = pd.concat(df_reps)
-        df_reps.to_csv(f"results-{algo}-{fun.name}-nseeds={n_seeds}.csv", index=False)
+        filename = f"results-{algo}-{fun.name}-nseeds={n_seeds}.csv"
+        print(f'Saving to {filename} ')
+        df_reps.to_csv(filename, index=False)
+
