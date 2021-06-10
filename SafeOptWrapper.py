@@ -1,5 +1,5 @@
-from safeopt import SafeOpt
-import GPy
+import GP
+from safeopt.gp_opt import SafeOpt
 
 def run_modified_safeopt(fun, n_seeds, n_evals):
     return run_safeopt(fun, n_seeds, n_evals, modified = True)
