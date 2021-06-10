@@ -387,6 +387,10 @@ class SafeOpt(GaussianProcessOptimization):
         # Set of expanders and maximizers
         self.G = self.S.copy()
         self.M = self.S.copy()
+        self.Prev = self.S.copy()
+        for i in range(self.x.shape[0]):
+            self.Prev = np.logical_or(self.Prev, np.all(self.inputs == self.x[i],axis=1))
+        self.cross_check = np.zeros((self.fmin.shape[0], self.inputs.shape[0]), dtype = np.bool)
 
     @property
     def use_lipschitz(self):
@@ -478,7 +482,17 @@ class SafeOpt(GaussianProcessOptimization):
     def compute_safe_set(self):
         """Compute only the safe set based on the current confidence bounds."""
         # Update safe set
-        self.S[:] = np.all(self.Q[:, ::2] > self.fmin, axis=1)
+        if self.use_lipschitz:
+            self.Prev = np.zeros(self.inputs.shape[0], dtype=np.bool)
+            for j in range(self.x.shape[0]):
+                self.Prev = np.logical_or(self.Prev, np.all(self.inputs == self.x[j],axis=1))
+            s_dist = cdist(self.inputs[self.Prev, :], self.inputs)
+            for i in range(len(self.gps)):
+                self.cross_check[i,:] = np.any(self.Q[:, ::2][self.Prev] - self.liptschitz[i] * s_dist >= self.fmin[i], axis=0)
+            self.Prev = np.all(self.cross_check, axis=0)
+            self.S[:] = self.Prev
+        else:
+            self.S[:] = np.all(self.Q[:, ::2] > self.fmin, axis=1)
 
     def compute_sets(self, full_sets=False):
         """
